@@ -42,3 +42,6 @@ for a in args:
         sys.exit()
     else:
         print(a)
+
+
+netcat clone projecr as per now we completed local version try it in wifi
