@@ -1,0 +1,6 @@
+we have done with the client logic server logic
+next we are moving to the proxy logic which came out as deadlock
+next 
+1 solve the deadlock
+2 fix the py file to be accesable using cmd like -l -p
+3 test run 
