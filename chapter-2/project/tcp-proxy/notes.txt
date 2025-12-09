@@ -1,6 +1,11 @@
 we have done with the client logic server logic
 next we are moving to the proxy logic which came out as deadlock
 next 
-1 solve the deadlock
+1 solve the deadlock (solved)
 2 fix the py file to be accesable using cmd like -l -p
 3 test run 
+4 run in an lan communicate with mob and lap
+5 make it as an mma(modify the mess by the proxy)
+
+ok we have solver the dead lock sutivation 
+why it occur because when server and client are talking at the same time we miss someonw and wating for each other due to async to solve the async we are using theads for cuncurrent executions of functions

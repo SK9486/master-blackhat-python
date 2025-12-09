@@ -1,7 +1,10 @@
 import socket as sc
+import threading
 def client():
-    proxy_ip = input("Enter proxy ip address : ")
-    proxy_port = int(input("Enter port no :"))
+    # proxy_ip = input("Enter proxy ip address : ")
+    proxy_ip = "127.0.0.1"
+    # proxy_port = int(input("Enter port no :"))
+    proxy_port = 8000
     try:
         soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         soc.connect((proxy_ip,proxy_port))
@@ -24,8 +27,10 @@ def client():
         soc.close()
 
 def server():
-    ser_ip = input("Enter ip address : ")
-    ser_port = int(input("Enter port no :"))
+    ser_ip = "127.0.0.1"
+    # ser_ip = input("Enter ip address : ")
+    ser_port = 9000
+    # ser_port = int(input("Enter port no :"))
     try :
         soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         soc.bind((ser_ip,ser_port))
@@ -54,10 +59,14 @@ def server():
         soc.close()
     
 def proxy():
-    proxy_ip = input("Enter proxy ip address : ")
-    proxy_port = int(input("Enter port no :"))
-    ser_ip = input("Enter ip address : ")
-    ser_port = int(input("Enter port no :"))
+    # proxy_ip = input("Enter proxy ip address : ")
+    proxy_ip = "127.0.0.1"
+    # proxy_port = int(input("Enter port no :"))
+    proxy_port = 8000
+    # ser_ip = input("Enter ip address : ")
+    ser_ip = "127.0.0.1"
+    # ser_port = int(input("Enter port no :"))
+    ser_port = 9000
     try :
         # proxy ==> server for clients
         p_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
@@ -66,32 +75,45 @@ def proxy():
         print(f"proxy listening for client request at {proxy_ip}::{proxy_port}")
         (cl_soc,cl_add) = p_soc.accept()
         (cl_ip,cl_port) = cl_add
-        print(f"proxy got an client request from {cl_ip}::{cl_port}")
         # proxy ==> act as an client to the server
         s_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         s_soc.connect((ser_ip,ser_port))
         print(f"proxy connected to the server at {ser_ip}::{ser_port}")
-        while 1 :
-            serv_res = s_soc.recv(4096)
-            if not serv_res:
-                print("server stopped the connection")
-                # cl_soc.shutdown(sc.SHUT_WR)
-                break
-            print("Server responded : ",serv_res.decode(),"forwading to the client...")
-            cl_soc.send(serv_res)
-        while 1:
-            cl_res = cl_soc.recv(4096)
-            if not cl_res:
-                print("client stooped the connection")
-                # cl_soc.shutdown(sc.SHUT_WR)
-                break
-            print("Client responded : ",cl_res.decode(),"forwading to the server...")
+        cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc))
+        sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc))
+        cl_prox_th.start()
+        sr_prox_th.start()
+        cl_prox_th.join()
+        sr_prox_th.join() 
     except Exception as e:
         print("error ocuur (proxy side) : ",e)
     finally:
         s_soc.close()
         cl_soc.close()
         p_soc.close()
+        
+def cl_prox(cl_soc,s_soc):
+    # proxy ==> server for clients
+    while 1:
+        cl_res = cl_soc.recv(4096)
+        if not cl_res:
+            print("client stooped the connection")
+            # cl_soc.shutdown(sc.SHUT_WR)
+            break
+        print(f"Client responded : ({cl_res.decode()}) forwading to the server...")
+        s_soc.sendall(cl_res)
+        
+
+def sr_prox(cl_soc,s_soc):
+    while 1 :
+        serv_res = s_soc.recv(4096)
+        if not serv_res:
+            print("server stopped the connection")
+            # cl_soc.shutdown(sc.SHUT_WR)
+            break
+        print(f"Server responded : ({serv_res.decode()}) forwading to the client...")
+        cl_soc.sendall(serv_res)
+    
 
 def main():
     print("-------------------")
