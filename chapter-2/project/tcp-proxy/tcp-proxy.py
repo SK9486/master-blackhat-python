@@ -67,6 +67,39 @@ def proxy():
     ser_ip = "127.0.0.1"
     # ser_port = int(input("Enter port no :"))
     ser_port = 9000
+    
+    # printing those messages
+    mode = None
+    pattern = None
+    # proxy input getting from user
+    print('''
+What do you want to capture?
+    1. Client requests only
+    2. Server responses only
+    3. Keyword-based (e.g., "password")
+    4. Capture everything
+          ''')
+    while 1:
+        ch = int(input("Enter your choice : "))
+        if(ch ==1):
+            print("Client requests capture mode selected")
+            mode = "CL"
+            break
+        elif(ch ==2):
+            print("Server response capture mode selected")
+            mode = "SR"
+            break
+        elif (ch==4):
+            print("all requests and response capture mode selected")
+            mode = "ALL"
+            break
+        elif(ch == 3):
+            print("capture based on keyword mode selected")
+            mode = "KEY"
+            pattern = input("Enter the pattern to capture (username,password...) : ")
+            break
+        else:
+            print("INVALID INPUT TRY AGAIN ...")
     try :
         # proxy ==> server for clients
         p_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
@@ -79,8 +112,8 @@ def proxy():
         s_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         s_soc.connect((ser_ip,ser_port))
         print(f"proxy connected to the server at {ser_ip}::{ser_port}")
-        cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc))
-        sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc))
+        cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc,mode,pattern))
+        sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc,mode,pattern))
         cl_prox_th.start()
         sr_prox_th.start()
         cl_prox_th.join()
@@ -92,7 +125,7 @@ def proxy():
         cl_soc.close()
         p_soc.close()
         
-def cl_prox(cl_soc,s_soc):
+def cl_prox(cl_soc,s_soc,mode,patt):
     # proxy ==> server for clients
     while 1:
         cl_res = cl_soc.recv(4096)
@@ -100,18 +133,30 @@ def cl_prox(cl_soc,s_soc):
             print("client stooped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
-        print(f"Client responded : ({cl_res.decode()}) forwading to the server...")
+        cl_mess = cl_res.decode()
+        if mode == "CL" or mode == "ALL":
+            print(f"Client responded : ({cl_mess}) forwading to the server...")
+        elif mode == "KEY":
+            if patt in cl_mess:
+                print(f"{patt} capture in the client responce")
+                print(f"Client responce : {cl_mess}")
         s_soc.sendall(cl_res)
         
 
-def sr_prox(cl_soc,s_soc):
+def sr_prox(cl_soc,s_soc,mode,patt):
     while 1 :
         serv_res = s_soc.recv(4096)
         if not serv_res:
             print("server stopped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
-        print(f"Server responded : ({serv_res.decode()}) forwading to the client...")
+        serv_mess = serv_res.decode()
+        if mode == "SR" or mode == "ALL":
+            print(f"Server responded : ({serv_mess}) forwading to the client...")
+        elif mode == "KEY":
+            if patt in serv_mess:
+                print(f"{patt} capture in the server responce")
+                print(f"Server responce : {serv_mess}")
         cl_soc.sendall(serv_res)
     
 
