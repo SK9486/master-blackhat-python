@@ -67,8 +67,6 @@ def proxy():
     ser_ip = "127.0.0.1"
     # ser_port = int(input("Enter port no :"))
     ser_port = 9000
-    #proxy thread management 
-    events = threading.Event()
     try :
         # proxy ==> server for clients
         p_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
@@ -81,8 +79,8 @@ def proxy():
         s_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         s_soc.connect((ser_ip,ser_port))
         print(f"proxy connected to the server at {ser_ip}::{ser_port}")
-        cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc,events))
-        sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc,events))
+        cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc))
+        sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc))
         cl_prox_th.start()
         sr_prox_th.start()
         cl_prox_th.join()
@@ -94,7 +92,7 @@ def proxy():
         cl_soc.close()
         p_soc.close()
         
-def cl_prox(cl_soc,s_soc,events):
+def cl_prox(cl_soc,s_soc):
     # proxy ==> server for clients
     while 1:
         cl_res = cl_soc.recv(4096)
@@ -102,37 +100,21 @@ def cl_prox(cl_soc,s_soc,events):
             print("client stooped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
-        print(f"Client responded : ({cl_res.decode()})")
-        cl_mess = cl_res.decode()
-        cl_mod = proxy_inputs(cl_mess,events)
-        print(f"Forwarding the message ({cl_mod}) to server ......")
-        s_soc.sendall(cl_mod.encode())
+        print(f"Client responded : ({cl_res.decode()}) forwading to the server...")
+        s_soc.sendall(cl_res)
         
 
-def sr_prox(cl_soc,s_soc,events):
+def sr_prox(cl_soc,s_soc):
     while 1 :
         serv_res = s_soc.recv(4096)
         if not serv_res:
             print("server stopped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
-        print(f"Server responded : ({serv_res.decode()})")
-        ser_mess = serv_res.decode()
-        ser_mod = proxy_inputs(ser_mess,events)
-        cl_soc.sendall(ser_mod.encode())
+        print(f"Server responded : ({serv_res.decode()}) forwading to the client...")
+        cl_soc.sendall(serv_res)
     
 
-def proxy_inputs(mess,events):
-    events.clear()
-    ch = input("Do you want to modify (y/n) : ")
-    if(ch == "y"):
-            ser_mod = input("Enter the message (modifiyed) : ")
-            res_mess =ser_mod
-    else :
-        res_mess = mess
-    events.set()
-    return res_mess
-    
 def main():
     print("-------------------")
     print("TCP PROXY SERVER")
