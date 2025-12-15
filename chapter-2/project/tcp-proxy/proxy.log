@@ -1,0 +1,45 @@
+
+23:25:11
+all requests and response capture mode selected
+MODE : ALL
+
+23:25:16
+proxy connected to the server at 127.0.0.1::9000
+
+23:27:02
+all requests and response capture mode selected
+MODE : ALL
+
+23:27:51
+all requests and response capture mode selected
+MODE : ALL
+
+23:27:57
+proxy connected to the server at 127.0.0.1::9000
+
+23:27:57
+MODE : SR TO CL
+MESSAGE : wlcome to the server 
+
+23:28:01
+MODE : CL TO SR
+MESSAGE : hellow
+
+23:28:06
+MODE : SR TO CL
+MESSAGE : hi there
+
+23:28:17
+MODE : CL TO SR
+MESSAGE : user 123@gmail.com
+
+23:28:25
+MODE : SR TO CL
+MESSAGE : pass sk@123
+
+23:28:28
+client stooped the connection
+
+23:29:08
+server stopped the connection
+

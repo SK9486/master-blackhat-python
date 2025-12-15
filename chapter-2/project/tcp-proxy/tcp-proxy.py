@@ -1,5 +1,7 @@
 import socket as sc
 import threading
+from datetime import datetime
+
 def client():
     # proxy_ip = input("Enter proxy ip address : ")
     proxy_ip = "127.0.0.1"
@@ -71,6 +73,7 @@ def proxy():
     # printing those messages
     mode = None
     pattern = None
+
     # proxy input getting from user
     print('''
 What do you want to capture?
@@ -83,20 +86,24 @@ What do you want to capture?
         ch = int(input("Enter your choice : "))
         if(ch ==1):
             print("Client requests capture mode selected")
+            write_logs("Client requests capture mode selected")
             mode = "CL"
             break
         elif(ch ==2):
             print("Server response capture mode selected")
+            write_logs("Server response capture mode selected"+"\n"+"MODE : SR")
             mode = "SR"
             break
         elif (ch==4):
             print("all requests and response capture mode selected")
+            write_logs("all requests and response capture mode selected"+"\n"+"MODE : ALL")
             mode = "ALL"
             break
         elif(ch == 3):
             print("capture based on keyword mode selected")
             mode = "KEY"
             pattern = input("Enter the pattern to capture (username,password...) : ")
+            write_logs("capture based on keyword mode selected","\n"+"MODE : KEY"+"\n"+"PATTERN : "+pattern)
             break
         else:
             print("INVALID INPUT TRY AGAIN ...")
@@ -112,6 +119,7 @@ What do you want to capture?
         s_soc = sc.socket(sc.AF_INET,sc.SOCK_STREAM)
         s_soc.connect((ser_ip,ser_port))
         print(f"proxy connected to the server at {ser_ip}::{ser_port}")
+        write_logs(f"proxy connected to the server at {ser_ip}::{ser_port}")
         cl_prox_th = threading.Thread(target=cl_prox,args=(cl_soc,s_soc,mode,pattern))
         sr_prox_th = threading.Thread(target=sr_prox,args=(cl_soc,s_soc,mode,pattern))
         cl_prox_th.start()
@@ -127,19 +135,23 @@ What do you want to capture?
         
 def cl_prox(cl_soc,s_soc,mode,patt):
     # proxy ==> server for clients
+    forward_type = None
     while 1:
         cl_res = cl_soc.recv(4096)
         if not cl_res:
             print("client stooped the connection")
+            write_logs("client stooped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
         cl_mess = cl_res.decode()
         if mode == "CL" or mode == "ALL":
             print(f"Client responded : ({cl_mess}) forwading to the server...")
+            write_logs("MODE : CL TO SR"+"\n"+"MESSAGE : "+cl_mess)
         elif mode == "KEY":
             if patt in cl_mess:
                 print(f"{patt} capture in the client responce")
                 print(f"Client responce : {cl_mess}")
+                write_logs("MODE : CL TO SR"+"\n"+"KEY : "+patt+"\n"+"MESSAGE : "+cl_mess)
         s_soc.sendall(cl_res)
         
 
@@ -148,18 +160,32 @@ def sr_prox(cl_soc,s_soc,mode,patt):
         serv_res = s_soc.recv(4096)
         if not serv_res:
             print("server stopped the connection")
+            write_logs("server stopped the connection")
             # cl_soc.shutdown(sc.SHUT_WR)
             break
         serv_mess = serv_res.decode()
         if mode == "SR" or mode == "ALL":
             print(f"Server responded : ({serv_mess}) forwading to the client...")
+            write_logs("MODE : SR TO CL"+"\n"+"MESSAGE : "+serv_mess)
         elif mode == "KEY":
             if patt in serv_mess:
                 print(f"{patt} capture in the server responce")
                 print(f"Server responce : {serv_mess}")
+                write_logs("MODE : CL TO SR"+"\n"+"KEY : "+patt+"\n"+"MESSAGE : "+serv_mess)
         cl_soc.sendall(serv_res)
     
+def write_logs(mess):
+    with open("proxy.log","a") as log_file:
+        curr_time = datetime.now().strftime("%H:%M:%S")
+        log_file.write(curr_time+"\n")
+        log_file.write(mess+"\n")
+        log_file.write("\n")
+    
+def read_log():
+    with open("proxy.log","r") as log_file:
+        print(log_file.read())
 
+        
 def main():
     print("-------------------")
     print("TCP PROXY SERVER")
@@ -185,5 +211,16 @@ def main():
         proxy()
     else:
         print("invalid choice ...")
+    read_log()
 
 main()
+
+# capture = None
+#         if mode == "KEY":
+#             capture = "CAPTURE BASED ON KEY"
+#         elif mode == "CL":
+#             capture = "CAPTURE CLIENTS REQUESTS ONLY MODE"
+#         elif mode == "SR":
+#             capture = "CAPTURE SERVER RESPONSE ONLY MODE"
+#         else :
+#             capture = "CAPTURE ALL MODE"
