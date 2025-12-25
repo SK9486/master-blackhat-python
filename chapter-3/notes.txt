@@ -1,0 +1,2 @@
+ok i am going to build an paket sniffer
+to cget the unencrpted messagese through router
